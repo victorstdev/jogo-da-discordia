@@ -24,9 +24,39 @@ io.on('connection', (socket) => {
         }
 
         salas[salaId].jogadores.push({ id: socket.id, nome });
-        
+
         // Avisa todo mundo na sala que alguém entrou
         io.to(salaId).emit('update_players', salas[salaId].jogadores);
+    });
+    // Dentro do io.on('connection', (socket) => { ... })
+
+    socket.on('enviar_palavras', (dados) => {
+        const { salaId, palavras } = dados;
+
+        if (salas[salaId]) {
+            // Adiciona as palavras do jogador ao pote da sala
+            salas[salaId].pote.push(...palavras);
+
+            console.log(`Sala ${salaId} agora tem ${salas[salaId].pote.length} palavras.`);
+
+            // Opcional: Avisar a todos quantos papéis já estão no pote
+            io.to(salaId).emit('pote_atualizado', salas[salaId].pote.length);
+        }
+    });
+
+    socket.on('iniciar_jogo', (salaId) => {
+        if (salas[salaId] && salas[salaId].pote.length > 0) {
+            salas[salaId].status = 'PLAYING';
+            salas[salaId].fase = 1;
+
+            // Embaralha o pote (Shuffle)
+            salas[salaId].pote.sort(() => Math.random() - 0.5);
+
+            io.to(salaId).emit('jogo_iniciado', {
+                fase: 1,
+                totalPalavras: salas[salaId].pote.length
+            });
+        }
     });
 });
 
