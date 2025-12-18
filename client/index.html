@@ -58,6 +58,14 @@
             </div>
         </div>
 
+        <div id="controles-inicio" class="mt-6 border-t border-slate-700 pt-4">
+            <p id="status-pote" class="text-sm text-yellow-400 mb-4">Pote vazio. Aguardando palavras...</p>
+            <button onclick="começarPartida()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg">
+                COMEÇAR FASE 1
+            </button>
+        </div>
+
     </div>
 
     <script>
@@ -119,6 +127,21 @@
                     <span>${j.nome}</span>
                 </div>
             `).join('');
+        });
+
+        function começarPartida() {
+            const salaId = document.getElementById('display-sala').innerText;
+            socket.emit('iniciar_jogo', salaId);
+        }
+
+        // Escutar quando o jogo começar de fato
+        socket.on('jogo_iniciado', (dados) => {
+            alert("O jogo começou! Fase: " + dados.fase);
+            // Aqui depois vamos esconder a tela de espera e mostrar a primeira palavra
+        });
+
+        socket.on('pote_atualizado', (quantidade) => {
+            document.getElementById('status-pote').innerText = `O pote tem ${quantidade} papéis!`;
         });
     </script>
 </body>
