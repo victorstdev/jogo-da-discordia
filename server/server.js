@@ -62,13 +62,29 @@ io.on('connection', (socket) => {
 
     socket.on('iniciar_jogo', (salaId) => {
         const sala = salas[salaId];
-        if (sala && sala.poteOriginal.length > 0) {
-            sala.status = 'PLAYING';
-            // Copia as palavras para o pote da rodada e embaralha
-            sala.poteAtual = [...sala.poteOriginal].sort(() => Math.random() - 0.5);
 
-            io.to(salaId).emit('jogo_iniciado', { total: sala.poteAtual.length });
+        console.log(`Solicitação de início para sala: ${salaId}`);
+
+        if (!sala) {
+            console.log("Erro: Sala não encontrada no servidor.");
+            return;
         }
+
+        if (sala.poteOriginal.length === 0) {
+            console.log("Erro: O pote está vazio. Adicione palavras primeiro.");
+            // Opcional: avisar o jogador que o pote está vazio
+            socket.emit('erro_jogo', "O pote está vazio! Todos enviaram as palavras?");
+            return;
+        }
+
+        // Se chegou aqui, está tudo certo!
+        sala.status = 'PLAYING';
+        sala.poteAtual = [...sala.poteOriginal].sort(() => Math.random() - 0.5);
+
+        console.log(`Jogo iniciado na sala ${salaId} com ${sala.poteAtual.length} palavras.`);
+
+        // Envia para TODOS na sala
+        io.to(salaId).emit('jogo_iniciado', { total: sala.poteAtual.length });
     });
 
     socket.on('proxima_palavra', (salaId) => {
