@@ -5,6 +5,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
@@ -16,85 +17,60 @@ const io = new Server(server, {
 const salas = {};
 
 io.on('connection', (socket) => {
-    console.log('Jogador conectado:', socket.id);
+    // Esse log você já vê no Render
+    console.log('Conexão estabelecida:', socket.id);
 
+    // EVENTO 1: ENTRAR NA SALA
     socket.on('join_room', (dados) => {
         const { nome, salaId } = dados;
-        const salaFormatada = salaId.trim().toUpperCase();
+        const sala = salaId.trim().toUpperCase();
+        socket.join(sala);
+        
+        console.log(`LOG: ${nome} entrou na sala ${sala}`);
 
-        socket.join(salaFormatada);
-        console.log(`Jogador ${nome} entrou na sala ${salaFormatada}`);
-
-        if (!salas[salaFormatada]) {
-            salas[salaFormatada] = {
-                jogadores: [],
-                poteOriginal: [],
-                poteAtual: [],
-                status: 'LOBBY'
-            };
+        if (!salas[sala]) {
+            salas[sala] = { jogadores: [], poteOriginal: [], poteAtual: [], status: 'LOBBY' };
         }
+        salas[sala].jogadores.push({ id: socket.id, nome });
 
-        // Evita adicionar o mesmo jogador duas vezes no array se ele atualizar a página
-        const jaExiste = salas[salaFormatada].jogadores.find(j => j.id === socket.id);
-        if (!jaExiste) {
-            salas[salaFormatada].jogadores.push({ id: socket.id, nome });
-        }
-
-        // Avisa TODO MUNDO da sala (incluindo quem acabou de entrar)
-        io.to(salaFormatada).emit('update_players', salas[salaFormatada].jogadores);
-
-        // Se já existirem palavras no pote de uma tentativa anterior, avisa o novo jogador
-        socket.emit('pote_atualizado', salas[salaFormatada].poteOriginal.length);
+        io.to(sala).emit('update_players', salas[sala].jogadores);
+        io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
     });
 
+    // EVENTO 2: RECEBER PALAVRAS
     socket.on('enviar_palavras', (dados) => {
         const { salaId, palavras } = dados;
-        if (salas[salaId]) {
-            // Adiciona ao pote original
-            salas[salaId].poteOriginal.push(...palavras);
-
-            console.log(`Sala ${salaId} recebeu +10 palavras. Total: ${salas[salaId].poteOriginal.length}`);
-
-            // avisar a sala, incluindo quem enviou
-            io.to(salaId).emit('pote_atualizado', salas[salaId].poteOriginal.length);
+        const sala = salaId.trim().toUpperCase();
+        if (salas[sala]) {
+            salas[sala].poteOriginal.push(...palavras);
+            console.log(`LOG: Sala ${sala} recebeu palavras. Total: ${salas[sala].poteOriginal.length}`);
+            io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
         }
     });
 
+    // EVENTO 3: INICIAR O JOGO
     socket.on('iniciar_jogo', (salaId) => {
-        const sala = salas[salaId];
-
-        console.log(`Solicitação de início para sala: ${salaId}`);
-
-        if (!sala) {
-            console.log("Erro: Sala não encontrada no servidor.");
-            return;
+        const sala = salaId.trim().toUpperCase();
+        console.log(`LOG: Tentativa de início na sala ${sala}`);
+        
+        if (salas[sala] && salas[sala].poteOriginal.length > 0) {
+            salas[sala].status = 'PLAYING';
+            salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
+            io.to(sala).emit('jogo_iniciado', { total: salas[sala].poteAtual.length });
+        } else {
+            console.log("LOG: Falha ao iniciar. Pote vazio ou sala inexistente.");
         }
-
-        if (sala.poteOriginal.length === 0) {
-            console.log("Erro: O pote está vazio. Adicione palavras primeiro.");
-            // Opcional: avisar o jogador que o pote está vazio
-            socket.emit('erro_jogo', "O pote está vazio! Todos enviaram as palavras?");
-            return;
-        }
-
-        // Se chegou aqui, está tudo certo!
-        sala.status = 'PLAYING';
-        sala.poteAtual = [...sala.poteOriginal].sort(() => Math.random() - 0.5);
-
-        console.log(`Jogo iniciado na sala ${salaId} com ${sala.poteAtual.length} palavras.`);
-
-        // Envia para TODOS na sala
-        io.to(salaId).emit('jogo_iniciado', { total: sala.poteAtual.length });
     });
 
+    // EVENTO 4: PRÓXIMA PALAVRA
     socket.on('proxima_palavra', (salaId) => {
-        const sala = salas[salaId];
-        if (sala && sala.poteAtual.length > 0) {
-            const palavra = sala.poteAtual.shift(); // Tira a primeira palavra
+        const sala = salaId.trim().toUpperCase();
+        if (salas[sala] && salas[sala].poteAtual.length > 0) {
+            const palavra = salas[sala].poteAtual.shift();
             socket.emit('receber_palavra', palavra);
-            io.to(salaId).emit('pote_atualizado', sala.poteAtual.length);
-        } else if (sala) {
-            io.to(salaId).emit('fase_concluida');
+            io.to(sala).emit('pote_atualizado', salas[sala].poteAtual.length);
+        } else if (salas[sala]) {
+            io.to(sala).emit('fase_concluida');
         }
     });
 
