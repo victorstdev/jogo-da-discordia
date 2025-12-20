@@ -142,6 +142,10 @@
             console.log("CONECTADO AO SERVIDOR COM SUCESSO!");
         });
 
+        socket.on('erro_jogo', (msg) => {
+            alert(msg);
+        });
+
         socket.on('update_players', (jogadores) => {
             console.log("Jogadores na sala:", jogadores);
             const lista = document.getElementById('lista-jogadores');
@@ -156,14 +160,16 @@
                 statusPote.innerText = `O pote tem ${qtd} papéis! Pronto para começar?`;
             }
         });
-
+        
         socket.on('jogo_iniciado', (dados) => {
-            console.log("O servidor autorizou o início do jogo!");
+            console.log("RECEBIDO: Jogo iniciado com sucesso!", dados);
+
+            // Esconder telas antigas e mostrar a de rodada
             document.getElementById('tela-espera').classList.add('hidden');
             document.getElementById('tela-rodada').classList.remove('hidden');
 
-            const salaId = document.getElementById('display-sala').innerText;
-            socket.emit('proxima_palavra', salaId);
+            // Pedir a primeira palavra
+            socket.emit('proxima_palavra', salaAtual);
         });
 
         socket.on('receber_palavra', (palavra) => {
