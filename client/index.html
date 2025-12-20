@@ -77,16 +77,19 @@
     </div>
 
     <script>
-        // SUBSTITUA PELO SEU LINK DO RENDER
         const socket = io('https://jogo-da-discordia.onrender.com');
 
         let minhasPalavras = [];
+        let salaAtual = "";
 
         function entrarNaSala() {
-            const nome = document.getElementById('nome').value;
-            const salaId = document.getElementById('sala').value.toUpperCase();
+            const nome = document.getElementById('nome').value.trim();
+            const salaId = document.getElementById('sala').value.trim().toUpperCase();
 
             if (nome && salaId) {
+                salaAtual = salaId;
+                console.log(`Tentando entrar na sala: ${salaId} como ${nome}`);
+
                 socket.emit('join_room', { nome, salaId });
                 document.getElementById('tela-login').classList.add('hidden');
                 document.getElementById('tela-espera').classList.remove('hidden');
@@ -119,12 +122,11 @@
         }
 
         function começarPartida() {
-            const salaId = document.getElementById('display-sala').innerText;
-            if (salaId && salaId !== "---") {
-                console.log("Tentando iniciar jogo na sala:", salaId);
-                socket.emit('iniciar_jogo', salaId);
+            if (salaAtual) {
+                console.log("-> Botão Começar clicado! Enviando iniciar_jogo para:", salaAtual);
+                socket.emit('iniciar_jogo', salaAtual);
             } else {
-                alert("Erro ao identificar a sala.");
+                console.error("-> Erro: salaAtual está vazia!");
             }
         }
 
