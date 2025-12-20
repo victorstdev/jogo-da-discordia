@@ -136,7 +136,12 @@
 
         // --- EVENTOS DO SOCKET ---
 
+        socket.on('connect', () => {
+            console.log("CONECTADO AO SERVIDOR COM SUCESSO!");
+        });
+
         socket.on('update_players', (jogadores) => {
+            console.log("Jogadores na sala:", jogadores);
             const lista = document.getElementById('lista-jogadores');
             lista.innerHTML = `<p class="text-[10px] uppercase text-slate-500 mb-2">Jogadores na sala:</p>` +
                 jogadores.map(j => `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full"></div><span>${j.nome}</span></div>`).join('');

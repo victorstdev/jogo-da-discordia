@@ -20,13 +20,13 @@ io.on('connection', (socket) => {
 
     socket.on('join_room', (dados) => {
         const { nome, salaId } = dados;
-        const idFormatado = salaId.trim().toUpperCase();
+        const salaFormatada = salaId.trim().toUpperCase();
 
-        socket.join(idFormatado);
-        console.log(`Jogador ${nome} entrou na sala ${idFormatado}`);
+        socket.join(salaFormatada);
+        console.log(`Jogador ${nome} entrou na sala ${salaFormatada}`);
 
-        if (!salas[idFormatado]) {
-            salas[idFormatado] = {
+        if (!salas[salaFormatada]) {
+            salas[salaFormatada] = {
                 jogadores: [],
                 poteOriginal: [],
                 poteAtual: [],
@@ -35,16 +35,16 @@ io.on('connection', (socket) => {
         }
 
         // Evita adicionar o mesmo jogador duas vezes no array se ele atualizar a página
-        const jaExiste = salas[idFormatado].jogadores.find(j => j.id === socket.id);
+        const jaExiste = salas[salaFormatada].jogadores.find(j => j.id === socket.id);
         if (!jaExiste) {
-            salas[idFormatado].jogadores.push({ id: socket.id, nome });
+            salas[salaFormatada].jogadores.push({ id: socket.id, nome });
         }
 
         // Avisa TODO MUNDO da sala (incluindo quem acabou de entrar)
-        io.to(idFormatado).emit('update_players', salas[idFormatado].jogadores);
+        io.to(salaFormatada).emit('update_players', salas[salaFormatada].jogadores);
 
         // Se já existirem palavras no pote de uma tentativa anterior, avisa o novo jogador
-        socket.emit('pote_atualizado', salas[idFormatado].poteOriginal.length);
+        socket.emit('pote_atualizado', salas[salaFormatada].poteOriginal.length);
     });
 
     socket.on('enviar_palavras', (dados) => {
