@@ -34,11 +34,12 @@ io.on('connection', (socket) => {
     socket.on('enviar_palavras', (dados) => {
         const { salaId, palavras } = dados;
         if (salas[salaId]) {
-            // Adiciona as palavras ao pote
+            // Adiciona ao pote original
             salas[salaId].poteOriginal.push(...palavras);
-            console.log(`Sala ${salaId} recebeu palavras. Total: ${salas[salaId].poteOriginal.length}`);
             
-            // Avisa a todos que o pote cresceu
+            console.log(`Sala ${salaId} recebeu +10 palavras. Total: ${salas[salaId].poteOriginal.length}`);
+
+            // avisar a sala, incluindo quem enviou
             io.to(salaId).emit('pote_atualizado', salas[salaId].poteOriginal.length);
         }
     });

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,19 +8,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        .word-card { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); }
+        .word-card {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+        }
     </style>
 </head>
+
 <body class="bg-slate-900 text-white font-sans">
 
     <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-        
+
         <div id="tela-login" class="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
-            <h1 class="text-3xl font-bold text-center mb-6 text-yellow-400 italic border-b border-slate-700 pb-4">Jogo da Discórdia</h1>
+            <h1 class="text-3xl font-bold text-center mb-6 text-yellow-400 italic border-b border-slate-700 pb-4">Jogo
+                da Discórdia</h1>
             <div class="space-y-4">
-                <input type="text" id="nome" placeholder="Seu nome" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400">
-                <input type="text" id="sala" placeholder="Código da Sala" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400 uppercase">
-                <button onclick="entrarNaSala()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl transition-all">ENTRAR NO JOGO</button>
+                <input type="text" id="nome" placeholder="Seu nome"
+                    class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400">
+                <input type="text" id="sala" placeholder="Código da Sala"
+                    class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400 uppercase">
+                <button onclick="entrarNaSala()"
+                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl transition-all">ENTRAR
+                    NO JOGO</button>
             </div>
         </div>
 
@@ -27,18 +36,24 @@
             <div class="bg-slate-800 p-6 rounded-xl shadow-xl border border-slate-700">
                 <div id="area-input">
                     <h2 class="text-xl font-bold mb-2">Envie suas 10 palavras</h2>
-                    <p class="text-sm text-slate-400 mb-4">Faltam <span id="contador-palavras" class="text-yellow-400 font-bold">10</span> para o pote</p>
+                    <p class="text-sm text-slate-400 mb-4">Faltam <span id="contador-palavras"
+                            class="text-yellow-400 font-bold">10</span> para o pote</p>
                     <div class="flex gap-2">
-                        <input type="text" id="input-palavra" placeholder="Digite uma palavra..." class="flex-1 p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none">
-                        <button onclick="adicionarPalavra()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-bold">+</button>
+                        <input type="text" id="input-palavra" placeholder="Digite uma palavra..."
+                            class="flex-1 p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none">
+                        <button onclick="adicionarPalavra()"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-bold">+</button>
                     </div>
-                    <div id="lista-palavras-local" class="mt-4 text-xs grid grid-cols-2 gap-2 max-h-32 overflow-y-auto"></div>
+                    <div id="lista-palavras-local" class="mt-4 text-xs grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    </div>
                 </div>
 
                 <div id="area-controles" class="hidden mt-6 pt-6 border-t border-slate-700 text-center">
-                    <p id="status-pote" class="text-yellow-400 font-medium mb-4 italic">Palavras enviadas! Aguardando os outros...</p>
+                    <p id="status-pote" class="text-yellow-400 font-medium mb-4 italic">Palavras enviadas! Aguardando os
+                        outros...</p>
                     <div id="lista-jogadores" class="mb-6 text-left bg-slate-900/50 p-3 rounded-lg space-y-1"></div>
-                    <button onclick="começarPartida()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
+                    <button onclick="começarPartida()"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
                         COMEÇAR FASE 1
                     </button>
                 </div>
@@ -51,8 +66,9 @@
                 <h3 class="text-sm uppercase font-black tracking-widest opacity-60">Sua palavra é:</h3>
                 <p id="palavra-exibida" class="text-5xl font-black my-6 break-words">---</p>
             </div>
-            
-            <button onclick="acertouPalavra()" class="w-full bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-6 rounded-2xl shadow-xl transition-all active:scale-95">
+
+            <button onclick="acertouPalavra()"
+                class="w-full bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-6 rounded-2xl shadow-xl transition-all active:scale-95">
                 ACERTOU! ✓
             </button>
             <p class="mt-4 text-slate-400 text-sm">Pressione ao ouvir o acerto da sua dupla</p>
@@ -62,7 +78,7 @@
 
     <script>
         // SUBSTITUA PELO SEU LINK DO RENDER
-        const socket = io('https://jogo-da-discordia.onrender.com'); 
+        const socket = io('https://jogo-da-discordia.onrender.com');
 
         let minhasPalavras = [];
 
@@ -87,7 +103,7 @@
             if (palavra && minhasPalavras.length < 10) {
                 minhasPalavras.push(palavra);
                 input.value = '';
-                
+
                 const lista = document.getElementById('lista-palavras-local');
                 const contador = document.getElementById('contador-palavras');
                 contador.innerText = 10 - minhasPalavras.length;
@@ -104,7 +120,12 @@
 
         function começarPartida() {
             const salaId = document.getElementById('display-sala').innerText;
-            socket.emit('iniciar_jogo', salaId);
+            if (salaId && salaId !== "---") {
+                console.log("Tentando iniciar jogo na sala:", salaId);
+                socket.emit('iniciar_jogo', salaId);
+            } else {
+                alert("Erro ao identificar a sala.");
+            }
         }
 
         function acertouPalavra() {
@@ -117,18 +138,23 @@
 
         socket.on('update_players', (jogadores) => {
             const lista = document.getElementById('lista-jogadores');
-            lista.innerHTML = `<p class="text-[10px] uppercase text-slate-500 mb-2">Jogadores na sala:</p>` + 
+            lista.innerHTML = `<p class="text-[10px] uppercase text-slate-500 mb-2">Jogadores na sala:</p>` +
                 jogadores.map(j => `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full"></div><span>${j.nome}</span></div>`).join('');
         });
 
         socket.on('pote_atualizado', (qtd) => {
-            document.getElementById('status-pote').innerText = `O pote tem ${qtd} papéis! Pronto para começar?`;
+            console.log("O pote atualizou para:", qtd); // Verifique se isso aparece no F12
+            const statusPote = document.getElementById('status-pote');
+            if (statusPote) {
+                statusPote.innerText = `O pote tem ${qtd} papéis! Pronto para começar?`;
+            }
         });
 
         socket.on('jogo_iniciado', (dados) => {
+            console.log("O servidor autorizou o início do jogo!");
             document.getElementById('tela-espera').classList.add('hidden');
             document.getElementById('tela-rodada').classList.remove('hidden');
-            // Pede a primeira palavra automaticamente para quem deu o start
+
             const salaId = document.getElementById('display-sala').innerText;
             socket.emit('proxima_palavra', salaId);
         });
@@ -143,4 +169,5 @@
         });
     </script>
 </body>
+
 </html>
