@@ -66,6 +66,18 @@
             </button>
         </div>
 
+        <div id="tela-rodada" class="hidden mt-6">
+            <div class="bg-yellow-500 text-slate-900 p-8 rounded-2xl shadow-2xl mb-6">
+                <h3 class="text-lg font-bold uppercase tracking-widest opacity-75">Sua palavra é:</h3>
+                <p id="palavra-exibida" class="text-4xl font-black my-4">---</p>
+            </div>
+
+            <button onclick="acertouPalavra()"
+                class="w-full bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-6 rounded-2xl shadow-lg transform active:scale-95 transition-all">
+                ACERTOU! ✓
+            </button>
+        </div>
+
     </div>
 
     <script>
@@ -142,6 +154,26 @@
 
         socket.on('pote_atualizado', (quantidade) => {
             document.getElementById('status-pote').innerText = `O pote tem ${quantidade} papéis!`;
+        });
+
+        function acertouPalavra() {
+            const salaId = document.getElementById('display-sala').innerText;
+            // Avisa o servidor que acertou
+            socket.emit('marcar_ponto', { salaId });
+            // Pede a próxima
+            socket.emit('proxima_palavra', salaId);
+        }
+
+        socket.on('receber_palavra', (palavra) => {
+            document.getElementById('tela-rodada').classList.remove('hidden');
+            document.getElementById('controles-inicio').classList.add('hidden'); // Esconde o botão de começar
+            document.getElementById('palavra-exibida').innerText = palavra;
+        });
+
+        socket.on('fase_concluida', () => {
+            alert("Todas as palavras do pote acabaram!");
+            document.getElementById('tela-rodada').classList.add('hidden');
+            document.getElementById('palavra-exibida').innerText = "FIM DA FASE";
         });
     </script>
 </body>

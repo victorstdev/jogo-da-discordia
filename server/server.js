@@ -58,6 +58,34 @@ io.on('connection', (socket) => {
             });
         }
     });
+
+    socket.on('proxima_palavra', (salaId) => {
+        const sala = salas[salaId];
+
+        if (sala && sala.pote.length > 0) {
+            // Remove a primeira palavra do pote (que já foi embaralhado)
+            const palavraSorteada = sala.pote.shift();
+
+            // Define quem é o jogador da vez (por enquanto, o que pediu a palavra)
+            // Envia a palavra APENAS para quem pediu
+            socket.emit('receber_palavra', palavraSorteada);
+
+            // Avisa o resto da sala que o pote diminuiu
+            io.to(salaId).emit('pote_atualizado', sala.pote.length);
+        } else {
+            // Se o pote acabar, avisar que a fase terminou
+            io.to(salaId).emit('fase_concluida');
+        }
+    });
+
+    socket.on('marcar_ponto', (dados) => {
+        const { salaId, duplaId } = dados;
+        // Lógica de pontos aqui (podemos expandir depois)
+        console.log(`Ponto para a sala ${salaId}`);
+
+        // Pede automaticamente a próxima palavra para o jogador
+        // (Isso faz o jogo fluir rápido)
+    });
 });
 
 const PORT = process.env.PORT || 3000;
