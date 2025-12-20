@@ -15,20 +15,31 @@ io.on('connection', (socket) => {
 
     socket.on('join_room', (dados) => {
         const { nome, salaId } = dados;
-        socket.join(salaId);
+        const idFormatado = salaId.trim().toUpperCase();
 
-        if (!salas[salaId]) {
-            // Inicializa a estrutura da sala
-            salas[salaId] = { 
-                jogadores: [], 
-                poteOriginal: [], // Guarda todas para as próximas fases
-                poteAtual: [],    // Palavras que restam na fase ativa
-                status: 'LOBBY' 
+        socket.join(idFormatado);
+        console.log(`Jogador ${nome} entrou na sala ${idFormatado}`);
+
+        if (!salas[idFormatado]) {
+            salas[idFormatado] = {
+                jogadores: [],
+                poteOriginal: [],
+                poteAtual: [],
+                status: 'LOBBY'
             };
         }
 
-        salas[salaId].jogadores.push({ id: socket.id, nome });
-        io.to(salaId).emit('update_players', salas[salaId].jogadores);
+        // Evita adicionar o mesmo jogador duas vezes no array se ele atualizar a página
+        const jaExiste = salas[idFormatado].jogadores.find(j => j.id === socket.id);
+        if (!jaExiste) {
+            salas[idFormatado].jogadores.push({ id: socket.id, nome });
+        }
+
+        // Avisa TODO MUNDO da sala (incluindo quem acabou de entrar)
+        io.to(idFormatado).emit('update_players', salas[idFormatado].jogadores);
+
+        // Se já existirem palavras no pote de uma tentativa anterior, avisa o novo jogador
+        socket.emit('pote_atualizado', salas[idFormatado].poteOriginal.length);
     });
 
     socket.on('enviar_palavras', (dados) => {
@@ -36,7 +47,7 @@ io.on('connection', (socket) => {
         if (salas[salaId]) {
             // Adiciona ao pote original
             salas[salaId].poteOriginal.push(...palavras);
-            
+
             console.log(`Sala ${salaId} recebeu +10 palavras. Total: ${salas[salaId].poteOriginal.length}`);
 
             // avisar a sala, incluindo quem enviou
@@ -50,7 +61,7 @@ io.on('connection', (socket) => {
             sala.status = 'PLAYING';
             // Copia as palavras para o pote da rodada e embaralha
             sala.poteAtual = [...sala.poteOriginal].sort(() => Math.random() - 0.5);
-            
+
             io.to(salaId).emit('jogo_iniciado', { total: sala.poteAtual.length });
         }
     });
