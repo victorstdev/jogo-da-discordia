@@ -87,7 +87,7 @@ socket.on('pote_atualizado', (qtd) => {
 });
 
 socket.on('jogo_iniciado', (dados) => {
-    console.log("🎮 Jogo Iniciado!", dados);
+    console.log("🎮 O SERVIDOR RESPONDEU: Jogo Iniciado!", dados);
     document.getElementById('tela-espera').classList.add('hidden');
     document.getElementById('tela-rodada').classList.remove('hidden');
     
