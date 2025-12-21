@@ -4,14 +4,19 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+// Libera o acesso para qualquer origem (Vercel, Localhost, etc)
+app.use(cors({ origin: "*" }));
 
 const server = http.createServer(app);
+
+// Configuração específica para evitar bloqueios de segurança
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
-    }
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    allowEIO3: true // Compatibilidade com versões mais antigas se houver
 });
 
 const salas = {};
@@ -20,12 +25,16 @@ io.on('connection', (socket) => {
     // Esse log você já vê no Render
     console.log('Conexão estabelecida:', socket.id);
 
+    socket.onAny((eventName, ...args) => {
+        console.log(`EVENTO RECEBIDO: ${eventName}`, args);
+    });
+
     // EVENTO 1: ENTRAR NA SALA
     socket.on('join_room', (dados) => {
         const { nome, salaId } = dados;
         const sala = salaId.trim().toUpperCase();
         socket.join(sala);
-        
+
         if (!salas[sala]) {
             salas[sala] = { jogadores: [], poteOriginal: [], poteAtual: [], status: 'LOBBY' };
         }
@@ -39,11 +48,11 @@ io.on('connection', (socket) => {
     socket.on('enviar_palavras', (dados) => {
         const { salaId, palavras } = dados;
         const sala = salaId.trim().toUpperCase();
-        
+
         if (salas[sala]) {
             salas[sala].poteOriginal.push(...palavras);
             console.log(`Sucesso: Sala ${sala} agora tem ${salas[sala].poteOriginal.length} palavras.`);
-            
+
             // Avisa a todos que o pote atualizou
             io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
         }
@@ -56,14 +65,14 @@ io.on('connection', (socket) => {
 
         if (salas[sala]) {
             const totalPalavras = salas[sala].poteOriginal.length;
-            
+
             if (totalPalavras > 0) {
                 salas[sala].status = 'PLAYING';
                 // Copia e embaralha
                 salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
-                
+
                 console.log(`Iniciando jogo na sala ${sala} com ${totalPalavras} palavras.`);
-                
+
                 // MANDA O SINAL DE VOLTA PARA O CLIENTE
                 io.to(sala).emit('jogo_iniciado', { total: totalPalavras });
             } else {
