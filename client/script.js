@@ -75,8 +75,17 @@ function adicionarPalavra() {
 // ============================================
 
 function começarPartida() {
-    console.log("🎯 Iniciando Partida e Timer...");
-    socket.emit('iniciar_jogo', salaAtual);
+    // Se o pote está vazio (fim da fase), pedimos para o servidor mudar a fase
+    // Caso contrário, apenas iniciamos o cronômetro para o próximo jogador
+    const poteTexto = document.getElementById('pote-count-jogo').innerText;
+    const poteVazio = poteTexto.includes(": 0");
+
+    if (poteVazio || document.getElementById('nome-fase').innerText === "Fase 1") {
+        console.log("Avançando fase...");
+        socket.emit('iniciar_jogo', salaAtual);
+    }
+    
+    console.log("Iniciando novo turno...");
     socket.emit('iniciar_rodada', salaAtual);
 }
 
@@ -165,6 +174,12 @@ socket.on('atualizar_placar', (pontos) => {
     }
 });
 
+socket.on('rodada_comecou', () => {
+    document.getElementById('tela-espera').classList.add('hidden');
+    document.getElementById('tela-rodada').classList.remove('hidden');
+    socket.emit('proxima_palavra', salaAtual);
+});
+
 // ============================================
 // LISTENERS - TIMER
 // ============================================
@@ -183,10 +198,20 @@ socket.on('timer_update', (segundos) => {
 
 socket.on('timer_acabou', () => {
     somAcabou.play();
-    alert("⌛ O TEMPO ACABOU!");
-    // Esconde a palavra para ninguém continuar a dar dicas
-    document.getElementById('palavra-exibida').innerText = "---";
-    // Volta para a tela de espera ou mostra um botão de "Próximo Jogador"
+    alert("⌛ O TEMPO ACABOU! Passe a vez.");
+    
     document.getElementById('tela-rodada').classList.add('hidden');
     document.getElementById('tela-espera').classList.remove('hidden');
+    
+    // Muda o texto do botão para o próximo jogador saber que é a vez dele
+    const btn = document.querySelector('#area-controles button');
+    
+    const poteTexto = document.getElementById('pote-count-jogo').innerText;
+    if (poteTexto.includes(": 0")) {
+        btn.innerText = "COMEÇAR PRÓXIMA FASE";
+        btn.classList.replace('bg-green-600', 'bg-blue-600');
+    } else {
+        btn.innerText = "INICIAR MEU TURNO (60s)";
+        btn.classList.replace('bg-blue-600', 'bg-green-600');
+    }
 });

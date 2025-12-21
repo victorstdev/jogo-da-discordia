@@ -66,45 +66,47 @@ io.on('connection', (socket) => {
 
     // GAME CONTROL
     socket.on('iniciar_jogo', (salaId) => {
-        const sala = salaId.trim().toUpperCase();
-        if (salas[sala] && salas[sala].poteOriginal.length > 0) {
-            if (!salas[sala].fase) salas[sala].fase = 1;
-            else if (salas[sala].fase < 3) salas[sala].fase += 1;
-
-            salas[sala].status = 'PLAYING';
+    const sala = salaId.trim().toUpperCase();
+    if (salas[sala] && salas[sala].poteOriginal.length > 0) {
+        
+        // Só avança a fase se o pote atual estiver vazio ou se o jogo ainda não começou
+        if (!salas[sala].fase) {
+            salas[sala].fase = 1;
             salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
-
-            io.to(sala).emit('jogo_iniciado', {
-                fase: salas[sala].fase,
-                total: salas[sala].poteAtual.length,
-                pontos: salas[sala].pontos || 0
-            });
+        } else if (salas[sala].poteAtual.length === 0 && salas[sala].fase < 3) {
+            salas[sala].fase += 1;
+            salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
         }
-    });
+
+        io.to(sala).emit('jogo_iniciado', { 
+            fase: salas[sala].fase, 
+            total: salas[sala].poteAtual.length,
+            pontos: salas[sala].pontos || 0
+        });
+    }
+});
 
     // TIMER MANAGEMENT
     socket.on('iniciar_rodada', (salaId) => {
-        const sala = salaId.trim().toUpperCase();
-        if (!salas[sala]) return;
+    const sala = salaId.trim().toUpperCase();
+    if (!salas[sala]) return;
 
-        clearInterval(timers[sala]);
-        let tempoRestante = 60;
-        console.log(`Cronómetro iniciado na sala ${sala}`);
+    clearInterval(timers[sala]);
+    let tempoRestante = 60;
 
-        io.to(sala).emit('timer_update', tempoRestante);
+    // Avisa a todos para trocarem para a tela de jogo, mas SEM mudar a fase
+    io.to(sala).emit('rodada_comecou'); 
 
-        timers[sala] = setInterval(() => {
-            tempoRestante--;
-
-            if (tempoRestante <= 0) {
-                clearInterval(timers[sala]);
-                io.to(sala).emit('timer_acabou');
-                console.log(`Tempo esgotado na sala ${sala}`);
-            } else {
-                io.to(sala).emit('timer_update', tempoRestante);
-            }
-        }, 1000);
-    });
+    timers[sala] = setInterval(() => {
+        tempoRestante--;
+        if (tempoRestante <= 0) {
+            clearInterval(timers[sala]);
+            io.to(sala).emit('timer_acabou');
+        } else {
+            io.to(sala).emit('timer_update', tempoRestante);
+        }
+    }, 1000);
+});
 
     socket.on('marcar_ponto', (dados) => {
         const { salaId } = dados;
