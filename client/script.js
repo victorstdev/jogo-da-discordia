@@ -80,7 +80,9 @@ function começarPartida() {
 
 function acertouPalavra() {
     console.log("✅ Acerto registrado!");
+    // Primeiro marca o ponto no servidor
     socket.emit('marcar_ponto', { salaId: salaAtual });
+    // Depois pede a próxima palavra
     socket.emit('proxima_palavra', salaAtual);
 }
 
@@ -146,6 +148,18 @@ socket.on('fase_concluida', () => {
     // O botão de começar partida agora servirá para iniciar a próxima fase
     const btn = document.querySelector('#area-controles button');
     btn.innerText = "COMEÇAR PRÓXIMA FASE";
+});
+
+socket.on('atualizar_placar', (pontos) => {
+    const placarElement = document.getElementById('placar-total');
+    if (placarElement) {
+        placarElement.innerText = pontos;
+        // Pequena animação de escala ao ganhar ponto
+        placarElement.parentElement.classList.add('scale-125', 'text-yellow-400');
+        setTimeout(() => {
+            placarElement.parentElement.classList.remove('scale-125', 'text-yellow-400');
+        }, 200);
+    }
 });
 
 // ============================================
