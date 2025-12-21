@@ -22,18 +22,18 @@ io.on('connection', (socket) => {
         const { nome, salaId } = dados;
         const sala = salaId.trim().toUpperCase();
         socket.join(sala);
-        
+
         if (!salas[sala]) {
-            salas[sala] = { 
-                jogadores: [], 
-                poteOriginal: [], 
-                poteAtual: [], 
-                fase: 0, 
-                pontos: 0 
+            salas[sala] = {
+                jogadores: [],
+                poteOriginal: [],
+                poteAtual: [],
+                fase: 0,
+                pontos: 0
             };
         }
         salas[sala].jogadores.push({ id: socket.id, nome });
-        
+
         io.to(sala).emit('update_players', salas[sala].jogadores);
         io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
     });
@@ -52,18 +52,18 @@ io.on('connection', (socket) => {
     socket.on('iniciar_jogo', (salaId) => {
         const sala = salaId.trim().toUpperCase();
         const s = salas[sala];
-        
+
         if (s && s.poteOriginal.length > 0) {
             // Se a fase acabou ou não começou, avança e reseta o pote
             if (s.poteAtual.length === 0) {
                 s.fase += 1;
                 s.poteAtual = [...s.poteOriginal].sort(() => Math.random() - 0.5);
             }
-            
-            io.to(sala).emit('jogo_iniciado', { 
-                fase: s.fase, 
+
+            io.to(sala).emit('jogo_iniciado', {
+                fase: s.fase,
                 total: s.poteAtual.length,
-                pontos: s.pontos 
+                pontos: s.pontos
             });
         }
     });
@@ -93,11 +93,13 @@ io.on('connection', (socket) => {
     socket.on('proxima_palavra', (salaId) => {
         const sala = salaId.trim().toUpperCase();
         const s = salas[sala];
+        console.log(`🔍 Pedido de palavra para a sala: ${sala}. Pote atual: ${s?.poteAtual?.length}`);
+
         if (s && s.poteAtual.length > 0) {
             const palavra = s.poteAtual.shift();
-            socket.emit('receber_palavra', palavra);
+            socket.emit('receber_palavra', palavra); // Envia apenas para quem pediu
             io.to(sala).emit('pote_atualizado', s.poteAtual.length);
-        } else if (s) {
+        } else {
             io.to(sala).emit('fase_concluida');
         }
     });

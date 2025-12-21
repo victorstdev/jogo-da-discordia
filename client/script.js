@@ -83,11 +83,22 @@ socket.on('rodada_comecou', () => {
 });
 
 socket.on('jogo_iniciado', (dados) => {
-    console.log("🎮 NOVO JOGO/FASE INICIADA:", dados);
+    console.log("🎮 JOGO INICIADO! Dados recebidos:", dados);
+    
+    // 1. Troca as telas
+    document.getElementById('tela-espera').classList.add('hidden');
+    document.getElementById('tela-rodada').classList.remove('hidden');
+    
+    // 2. Atualiza os textos da fase
     const fases = { 1: "Fase 1: Dicas Livres", 2: "Fase 2: Uma Palavra", 3: "Fase 3: Mímica" };
     const elFase = document.getElementById('nome-fase');
-    if (elFase) elFase.innerText = fases[dados.fase];
-    socket.emit('proxima_palavra', salaAtual);
+    if (elFase) elFase.innerText = fases[dados.fase] || "Jogo em Andamento";
+
+    // 3. Aguarda 200ms e pede a primeira palavra (evita erro de sincronia)
+    setTimeout(() => {
+        console.log("🎲 Pedindo a primeira palavra do pote...");
+        socket.emit('proxima_palavra', salaAtual);
+    }, 200);
 });
 
 socket.on('receber_palavra', (p) => {
