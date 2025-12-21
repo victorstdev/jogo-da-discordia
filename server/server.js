@@ -67,20 +67,18 @@ io.on('connection', (socket) => {
     // GAME CONTROL
     socket.on('iniciar_jogo', (salaId) => {
         const sala = salaId.trim().toUpperCase();
-        console.log(`Recebido iniciar_jogo para a sala: ${sala}`);
+        if (salas[sala] && salas[sala].poteOriginal.length > 0) {
+            if (!salas[sala].fase) salas[sala].fase = 1;
+            else if (salas[sala].fase < 3) salas[sala].fase += 1;
 
-        if (salas[sala]) {
-            const totalPalavras = salas[sala].poteOriginal.length;
-            if (totalPalavras > 0) {
-                salas[sala].status = 'PLAYING';
-                salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
-                console.log(`Iniciando jogo na sala ${sala} com ${totalPalavras} palavras.`);
-                io.to(sala).emit('jogo_iniciado', { total: totalPalavras });
-            } else {
-                console.log(`Erro: Tentativa de iniciar sala ${sala} com pote vazio.`);
-            }
-        } else {
-            console.log(`Erro: Sala ${sala} não existe no servidor.`);
+            salas[sala].status = 'PLAYING';
+            salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
+
+            io.to(sala).emit('jogo_iniciado', {
+                fase: salas[sala].fase,
+                total: salas[sala].poteAtual.length,
+                pontos: salas[sala].pontos || 0
+            });
         }
     });
 
@@ -106,6 +104,23 @@ io.on('connection', (socket) => {
                 io.to(sala).emit('timer_update', tempoRestante);
             }
         }, 1000);
+    });
+
+    socket.on('marcar_ponto', (dados) => {
+        const { salaId } = dados;
+        const sala = salaId.trim().toUpperCase();
+
+        if (salas[sala]) {
+            // Se a sala ainda não tem pontuação, cria
+            if (!salas[sala].pontos) salas[sala].pontos = 0;
+
+            salas[sala].pontos += 1;
+
+            console.log(`Ponto marcado na sala ${sala}. Total: ${salas[sala].pontos}`);
+
+            // Avisa a todos o novo placar
+            io.to(sala).emit('atualizar_placar', salas[sala].pontos);
+        }
     });
 
     socket.on('parar_timer', (salaId) => {
