@@ -26,8 +26,6 @@ io.on('connection', (socket) => {
         const sala = salaId.trim().toUpperCase();
         socket.join(sala);
         
-        console.log(`LOG: ${nome} entrou na sala ${sala}`);
-
         if (!salas[sala]) {
             salas[sala] = { jogadores: [], poteOriginal: [], poteAtual: [], status: 'LOBBY' };
         }
@@ -41,9 +39,12 @@ io.on('connection', (socket) => {
     socket.on('enviar_palavras', (dados) => {
         const { salaId, palavras } = dados;
         const sala = salaId.trim().toUpperCase();
+        
         if (salas[sala]) {
             salas[sala].poteOriginal.push(...palavras);
-            console.log(`LOG: Sala ${sala} recebeu palavras. Total: ${salas[sala].poteOriginal.length}`);
+            console.log(`Sucesso: Sala ${sala} agora tem ${salas[sala].poteOriginal.length} palavras.`);
+            
+            // Avisa a todos que o pote atualizou
             io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
         }
     });
@@ -51,14 +52,25 @@ io.on('connection', (socket) => {
     // EVENTO 3: INICIAR O JOGO
     socket.on('iniciar_jogo', (salaId) => {
         const sala = salaId.trim().toUpperCase();
-        console.log(`LOG: Tentativa de início na sala ${sala}`);
-        
-        if (salas[sala] && salas[sala].poteOriginal.length > 0) {
-            salas[sala].status = 'PLAYING';
-            salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
-            io.to(sala).emit('jogo_iniciado', { total: salas[sala].poteAtual.length });
+        console.log(`Recebido iniciar_jogo para a sala: ${sala}`);
+
+        if (salas[sala]) {
+            const totalPalavras = salas[sala].poteOriginal.length;
+            
+            if (totalPalavras > 0) {
+                salas[sala].status = 'PLAYING';
+                // Copia e embaralha
+                salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
+                
+                console.log(`Iniciando jogo na sala ${sala} com ${totalPalavras} palavras.`);
+                
+                // MANDA O SINAL DE VOLTA PARA O CLIENTE
+                io.to(sala).emit('jogo_iniciado', { total: totalPalavras });
+            } else {
+                console.log(`Erro: Tentativa de iniciar sala ${sala} com pote vazio.`);
+            }
         } else {
-            console.log("LOG: Falha ao iniciar. Pote vazio ou sala inexistente.");
+            console.log(`Erro: Sala ${sala} não existe no servidor.`);
         }
     });
 
