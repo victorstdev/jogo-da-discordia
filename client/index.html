@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,19 +8,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        .word-card { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); }
+        .word-card {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+        }
     </style>
 </head>
+
 <body class="bg-slate-900 text-white font-sans">
 
     <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-        
+
         <div id="tela-login" class="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
-            <h1 class="text-3xl font-bold text-center mb-6 text-yellow-400 italic border-b border-slate-700 pb-4">Jogo da Discórdia</h1>
+            <h1 class="text-3xl font-bold text-center mb-6 text-yellow-400 italic border-b border-slate-700 pb-4">Jogo
+                da Discórdia</h1>
             <div class="space-y-4">
-                <input type="text" id="nome" placeholder="Seu nome" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400">
-                <input type="text" id="sala" placeholder="Código da Sala" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400 uppercase">
-                <button onclick="entrarNaSala()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl transition-all shadow-lg">ENTRAR NO JOGO</button>
+                <input type="text" id="nome" placeholder="Seu nome"
+                    class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400">
+                <input type="text" id="sala" placeholder="Código da Sala"
+                    class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-yellow-400 uppercase">
+                <button onclick="entrarNaSala()"
+                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl transition-all shadow-lg">ENTRAR
+                    NO JOGO</button>
             </div>
         </div>
 
@@ -27,18 +36,23 @@
             <div class="bg-slate-800 p-6 rounded-xl shadow-xl border border-slate-700">
                 <div id="area-input">
                     <h2 class="text-xl font-bold mb-2">Envie suas 10 palavras</h2>
-                    <p class="text-sm text-slate-400 mb-4">Faltam <span id="contador-palavras" class="text-yellow-400 font-bold">10</span> para o pote</p>
+                    <p class="text-sm text-slate-400 mb-4">Faltam <span id="contador-palavras"
+                            class="text-yellow-400 font-bold">10</span> para o pote</p>
                     <div class="flex gap-2">
-                        <input type="text" id="input-palavra" placeholder="Digite uma palavra..." class="flex-1 p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none">
-                        <button onclick="adicionarPalavra()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-bold transition-all">+</button>
+                        <input type="text" id="input-palavra" placeholder="Digite uma palavra..."
+                            class="flex-1 p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none">
+                        <button onclick="adicionarPalavra()"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-bold transition-all">+</button>
                     </div>
-                    <div id="lista-palavras-local" class="mt-4 text-xs grid grid-cols-2 gap-2 max-h-32 overflow-y-auto"></div>
+                    <div id="lista-palavras-local" class="mt-4 text-xs grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    </div>
                 </div>
 
                 <div id="area-controles" class="hidden mt-6 pt-6 border-t border-slate-700 text-center">
                     <p id="status-pote" class="text-yellow-400 font-medium mb-4 italic">Aguardando palavras...</p>
                     <div id="lista-jogadores" class="mb-6 text-left bg-slate-900/50 p-3 rounded-lg space-y-1"></div>
-                    <button onclick="começarPartida()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
+                    <button onclick="começarPartida()"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
                         COMEÇAR FASE 1
                     </button>
                 </div>
@@ -46,20 +60,38 @@
         </div>
 
         <div id="tela-rodada" class="hidden w-full max-w-md text-center">
+            <div class="flex justify-between items-center mb-4 px-2">
+                <div class="text-left">
+                    <p id="nome-fase" class="text-yellow-400 font-bold uppercase text-xs tracking-widest">Fase 1: Dicas
+                        Livres</p>
+                    <p id="pote-count-jogo" class="text-slate-400 text-xs">Palavras restantes: 0</p>
+                </div>
+                <div id="timer"
+                    class="text-2xl font-mono font-black text-white bg-slate-800 px-4 py-1 rounded-full border-2 border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                    60s
+                </div>
+            </div>
+
             <div id="display-sala" class="hidden"></div>
+
             <div class="word-card text-slate-900 p-10 rounded-3xl shadow-2xl mb-8 transform rotate-1">
                 <h3 class="text-sm uppercase font-black tracking-widest opacity-60">Sua palavra é:</h3>
                 <p id="palavra-exibida" class="text-5xl font-black my-6 break-words uppercase">---</p>
             </div>
-            
-            <button onclick="acertouPalavra()" class="w-full bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-6 rounded-2xl shadow-xl transition-all active:scale-95">
+
+            <button onclick="acertouPalavra()"
+                class="w-full bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-6 rounded-2xl shadow-xl transition-all active:scale-95 mb-4">
                 ACERTOU! ✓
             </button>
-            <p id="pote-count-jogo" class="mt-4 text-slate-400 text-sm">Palavras restantes: 0</p>
+
+            <button onclick="pularPalavra()" class="text-slate-500 text-sm underline hover:text-slate-300">
+                Pular palavra (não marca ponto)
+            </button>
         </div>
 
     </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>
