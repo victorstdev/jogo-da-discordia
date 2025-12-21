@@ -4,6 +4,8 @@ const socket = io(URL_SERVIDOR);
 
 let salaAtual = "";
 let minhasPalavras = [];
+const somAcerto = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+const somAcabou = new Audio('https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3');
 
 // ============================================
 // CONEXÃO COM SERVIDOR
@@ -151,6 +153,7 @@ socket.on('fase_concluida', () => {
 });
 
 socket.on('atualizar_placar', (pontos) => {
+    somAcerto.play();
     const placarElement = document.getElementById('placar-total');
     if (placarElement) {
         placarElement.innerText = pontos;
@@ -179,6 +182,7 @@ socket.on('timer_update', (segundos) => {
 });
 
 socket.on('timer_acabou', () => {
+    somAcabou.play();
     alert("⌛ O TEMPO ACABOU!");
     // Esconde a palavra para ninguém continuar a dar dicas
     document.getElementById('palavra-exibida').innerText = "---";
