@@ -5,12 +5,21 @@ const socket = io(URL_SERVIDOR);
 let salaAtual = "";
 let minhasPalavras = [];
 
-// LOG DE CONEXÃO
+// ============================================
+// CONEXÃO COM SERVIDOR
+// ============================================
+
 socket.on('connect', () => {
     console.log("✅ CONECTADO AO SERVIDOR:", URL_SERVIDOR);
 });
 
-// --- FUNÇÕES DE INTERAÇÃO ---
+socket.on('connect_error', (err) => {
+    console.error("❌ Erro de conexão:", err.message);
+});
+
+// ============================================
+// FUNÇÕES - SALA E LOGIN
+// ============================================
 
 function entrarNaSala() {
     const nomeInput = document.getElementById('nome').value.trim();
@@ -29,6 +38,10 @@ function entrarNaSala() {
         alert("Preencha seu nome e o código da sala!");
     }
 }
+
+// ============================================
+// FUNÇÕES - PALAVRAS
+// ============================================
 
 function adicionarPalavra() {
     const input = document.getElementById('input-palavra');
@@ -55,9 +68,14 @@ function adicionarPalavra() {
     }
 }
 
+// ============================================
+// FUNÇÕES - JOGABILIDADE
+// ============================================
+
 function começarPartida() {
-    console.log("🎯 Botão 'Começar' clicado. Sala:", salaAtual);
+    console.log("🎯 Iniciando Partida e Timer...");
     socket.emit('iniciar_jogo', salaAtual);
+    socket.emit('iniciar_rodada', salaAtual);
 }
 
 function acertouPalavra() {
@@ -71,7 +89,9 @@ function pularPalavra() {
     socket.emit('proxima_palavra', salaAtual);
 }
 
-// --- OUVINTES DO SERVIDOR (SOCKET.ON) ---
+// ============================================
+// LISTENERS - ATUALIZAÇÃO DE ESTADO
+// ============================================
 
 socket.on('update_players', (jogadores) => {
     console.log("👥 Jogadores na sala:", jogadores);
@@ -91,20 +111,24 @@ socket.on('pote_atualizado', (qtd) => {
     if (poteJogo) poteJogo.innerText = `Palavras restantes: ${qtd}`;
 });
 
+// ============================================
+// LISTENERS - JOGO E FASES
+// ============================================
+
 socket.on('jogo_iniciado', (dados) => {
     console.log("🎮 Jogo Iniciado!", dados);
     document.getElementById('tela-espera').classList.add('hidden');
     document.getElementById('tela-rodada').classList.remove('hidden');
-    
+
     // Atualiza o texto da fase no DOM
     const textosFases = {
         1: "Fase 1: Dicas Livres",
         2: "Fase 2: Uma Palavra",
         3: "Fase 3: Mímica"
     };
-    
+
     document.getElementById('nome-fase').innerText = textosFases[dados.fase] || "Jogo Iniciado";
-    
+
     // Pede a primeira palavra
     socket.emit('proxima_palavra', salaAtual);
 });
@@ -118,12 +142,33 @@ socket.on('fase_concluida', () => {
     document.getElementById('palavra-exibida').innerText = "FIM DA FASE!";
     document.getElementById('tela-rodada').classList.add('hidden');
     document.getElementById('tela-espera').classList.remove('hidden');
-    
+
     // O botão de começar partida agora servirá para iniciar a próxima fase
     const btn = document.querySelector('#area-controles button');
     btn.innerText = "COMEÇAR PRÓXIMA FASE";
 });
 
-socket.on('connect_error', (err) => {
-    console.error("❌ Erro de conexão:", err.message);
+// ============================================
+// LISTENERS - TIMER
+// ============================================
+
+socket.on('timer_update', (segundos) => {
+    const timerElement = document.getElementById('timer');
+    timerElement.innerText = segundos + "s";
+
+    // Feedback visual: fica vermelho nos últimos 10 segundos
+    if (segundos <= 10) {
+        timerElement.classList.add('text-red-500', 'border-red-500');
+    } else {
+        timerElement.classList.remove('text-red-500', 'border-red-500');
+    }
+});
+
+socket.on('timer_acabou', () => {
+    alert("⌛ O TEMPO ACABOU!");
+    // Esconde a palavra para ninguém continuar a dar dicas
+    document.getElementById('palavra-exibida').innerText = "---";
+    // Volta para a tela de espera ou mostra um botão de "Próximo Jogador"
+    document.getElementById('tela-rodada').classList.add('hidden');
+    document.getElementById('tela-espera').classList.remove('hidden');
 });

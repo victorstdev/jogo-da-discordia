@@ -4,32 +4,29 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
-// Libera o acesso para qualquer origem (Vercel, Localhost, etc)
 app.use(cors({ origin: "*" }));
 
 const server = http.createServer(app);
-
-// Configuração específica para evitar bloqueios de segurança
 const io = new Server(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     },
-    allowEIO3: true // Compatibilidade com versões mais antigas se houver
+    allowEIO3: true
 });
 
 const salas = {};
+const timers = {};
 
 io.on('connection', (socket) => {
-    // Esse log você já vê no Render
     console.log('Conexão estabelecida:', socket.id);
 
     socket.onAny((eventName, ...args) => {
         console.log(`EVENTO RECEBIDO: ${eventName}`, args);
     });
 
-    // EVENTO 1: ENTRAR NA SALA
+    // ROOM MANAGEMENT
     socket.on('join_room', (dados) => {
         const { nome, salaId } = dados;
         const sala = salaId.trim().toUpperCase();
@@ -44,7 +41,7 @@ io.on('connection', (socket) => {
         io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
     });
 
-    // EVENTO 2: RECEBER PALAVRAS
+    // WORD MANAGEMENT
     socket.on('enviar_palavras', (dados) => {
         const { salaId, palavras } = dados;
         const sala = salaId.trim().toUpperCase();
@@ -52,38 +49,10 @@ io.on('connection', (socket) => {
         if (salas[sala]) {
             salas[sala].poteOriginal.push(...palavras);
             console.log(`Sucesso: Sala ${sala} agora tem ${salas[sala].poteOriginal.length} palavras.`);
-
-            // Avisa a todos que o pote atualizou
             io.to(sala).emit('pote_atualizado', salas[sala].poteOriginal.length);
         }
     });
 
-    // EVENTO 3: INICIAR O JOGO
-    socket.on('iniciar_jogo', (salaId) => {
-        const sala = salaId.trim().toUpperCase();
-        console.log(`Recebido iniciar_jogo para a sala: ${sala}`);
-
-        if (salas[sala]) {
-            const totalPalavras = salas[sala].poteOriginal.length;
-
-            if (totalPalavras > 0) {
-                salas[sala].status = 'PLAYING';
-                // Copia e embaralha
-                salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
-
-                console.log(`Iniciando jogo na sala ${sala} com ${totalPalavras} palavras.`);
-
-                // MANDA O SINAL DE VOLTA PARA O CLIENTE
-                io.to(sala).emit('jogo_iniciado', { total: totalPalavras });
-            } else {
-                console.log(`Erro: Tentativa de iniciar sala ${sala} com pote vazio.`);
-            }
-        } else {
-            console.log(`Erro: Sala ${sala} não existe no servidor.`);
-        }
-    });
-
-    // EVENTO 4: PRÓXIMA PALAVRA
     socket.on('proxima_palavra', (salaId) => {
         const sala = salaId.trim().toUpperCase();
         if (salas[sala] && salas[sala].poteAtual.length > 0) {
@@ -95,6 +64,55 @@ io.on('connection', (socket) => {
         }
     });
 
+    // GAME CONTROL
+    socket.on('iniciar_jogo', (salaId) => {
+        const sala = salaId.trim().toUpperCase();
+        console.log(`Recebido iniciar_jogo para a sala: ${sala}`);
+
+        if (salas[sala]) {
+            const totalPalavras = salas[sala].poteOriginal.length;
+            if (totalPalavras > 0) {
+                salas[sala].status = 'PLAYING';
+                salas[sala].poteAtual = [...salas[sala].poteOriginal].sort(() => Math.random() - 0.5);
+                console.log(`Iniciando jogo na sala ${sala} com ${totalPalavras} palavras.`);
+                io.to(sala).emit('jogo_iniciado', { total: totalPalavras });
+            } else {
+                console.log(`Erro: Tentativa de iniciar sala ${sala} com pote vazio.`);
+            }
+        } else {
+            console.log(`Erro: Sala ${sala} não existe no servidor.`);
+        }
+    });
+
+    // TIMER MANAGEMENT
+    socket.on('iniciar_rodada', (salaId) => {
+        const sala = salaId.trim().toUpperCase();
+        if (!salas[sala]) return;
+
+        clearInterval(timers[sala]);
+        let tempoRestante = 60;
+        console.log(`Cronómetro iniciado na sala ${sala}`);
+
+        io.to(sala).emit('timer_update', tempoRestante);
+
+        timers[sala] = setInterval(() => {
+            tempoRestante--;
+
+            if (tempoRestante <= 0) {
+                clearInterval(timers[sala]);
+                io.to(sala).emit('timer_acabou');
+                console.log(`Tempo esgotado na sala ${sala}`);
+            } else {
+                io.to(sala).emit('timer_update', tempoRestante);
+            }
+        }, 1000);
+    });
+
+    socket.on('parar_timer', (salaId) => {
+        clearInterval(timers[salaId.toUpperCase()]);
+    });
+
+    // DISCONNECT
     socket.on('disconnect', () => {
         console.log('Jogador desconectou');
     });
